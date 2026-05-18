@@ -1,0 +1,540 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>마을회관 퀴즈</title>
+<style>
+:root {
+    --green-dark: #1B5E3B;
+    --green: #2D8653;
+    --green-pale: #E8F5EE;
+    --blue: #1E3A8A;
+    --blue-pale: #EFF6FF;
+    --amber: #F59E0B;
+    --amber-pale: #FEF3C7;
+    --correct: #10B981;
+    --wrong: #EF4444;
+    --bg: #F0F4F0;
+    --white: #FFFFFF;
+    --gray-100: #F3F4F6;
+    --gray-300: #D1D5DB;
+    --gray-500: #6B7280;
+    --text: #1A2E1A;
+    --radius: 18px;
+    --shadow: 0 4px 20px rgba(0,0,0,0.09);
+}
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body {
+    font-family: 'Segoe UI', 'Noto Sans KR', 'Apple SD Gothic Neo', sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    height: 100vh;
+    overflow: hidden;
+    user-select: none;
+}
+#app { height: 100vh; display: flex; flex-direction: column; }
+
+/* HEADER */
+.header {
+    padding: 14px 20px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    flex-shrink: 0;
+    color: #fff;
+    box-shadow: 0 2px 10px rgba(0,0,0,0.2);
+}
+.header.normal { background: var(--blue); }
+.header.surprise { background: #B45309; }
+.header-title { font-size: 18px; font-weight: 800; }
+.header-score { font-size: 15px; font-weight: 600; opacity: 0.9; }
+
+/* PROGRESS */
+.progress-bar {
+    height: 6px;
+    background: var(--gray-300);
+    flex-shrink: 0;
+}
+.progress-fill {
+    height: 100%;
+    background: var(--green);
+    transition: width 0.4s ease;
+}
+
+/* CONTENT */
+.content {
+    flex: 1;
+    overflow-y: auto;
+    padding: 20px 16px 12px;
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+}
+
+/* QUESTION CARD */
+.q-card {
+    background: var(--white);
+    border-radius: var(--radius);
+    padding: 24px 20px;
+    box-shadow: var(--shadow);
+}
+.q-card.surprise {
+    background: var(--amber-pale);
+    border: 2px solid var(--amber);
+}
+.q-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 6px 14px;
+    border-radius: 100px;
+    font-size: 13px;
+    font-weight: 700;
+    margin-bottom: 14px;
+}
+.q-badge.ox { background: #DBEAFE; color: var(--blue); }
+.q-badge.mc { background: var(--green-pale); color: var(--green-dark); }
+.q-badge.surprise { background: #FDE68A; color: #92400E; }
+.q-num {
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--gray-500);
+    margin-bottom: 6px;
+}
+.q-text {
+    font-size: 20px;
+    font-weight: 700;
+    line-height: 1.5;
+    color: var(--text);
+}
+
+/* OX BUTTONS */
+.ox-row {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 12px;
+}
+.ox-btn {
+    padding: 28px 16px;
+    border-radius: var(--radius);
+    border: 3px solid transparent;
+    font-size: 40px;
+    font-weight: 900;
+    cursor: pointer;
+    transition: transform 0.12s, border-color 0.15s;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+.ox-btn:active { transform: scale(0.94); }
+.ox-btn.o { background: #DBEAFE; color: var(--blue); }
+.ox-btn.x { background: #FEE2E2; color: #DC2626; }
+.ox-btn.selected-correct { border-color: var(--correct); background: #D1FAE5; }
+.ox-btn.selected-wrong { border-color: var(--wrong); background: #FEE2E2; }
+
+/* MC BUTTONS */
+.mc-list { display: flex; flex-direction: column; gap: 10px; }
+.mc-btn {
+    padding: 16px 18px;
+    border-radius: 14px;
+    border: 3px solid var(--gray-300);
+    background: var(--white);
+    font-size: 16px;
+    font-weight: 600;
+    cursor: pointer;
+    text-align: left;
+    transition: transform 0.12s, border-color 0.15s, background 0.15s;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
+.mc-btn:active { transform: scale(0.97); }
+.mc-btn .num {
+    width: 32px; height: 32px;
+    border-radius: 50%;
+    background: var(--gray-100);
+    display: flex; align-items: center; justify-content: center;
+    font-size: 15px; font-weight: 800;
+    flex-shrink: 0;
+    color: var(--gray-500);
+}
+.mc-btn.selected-correct { border-color: var(--correct); background: #D1FAE5; }
+.mc-btn.selected-correct .num { background: var(--correct); color: #fff; }
+.mc-btn.selected-wrong { border-color: var(--wrong); background: #FEE2E2; }
+.mc-btn.selected-wrong .num { background: var(--wrong); color: #fff; }
+.mc-btn.show-correct { border-color: var(--correct); background: #D1FAE5; }
+.mc-btn.show-correct .num { background: var(--correct); color: #fff; }
+
+/* FEEDBACK */
+.feedback-box {
+    border-radius: 14px;
+    padding: 16px 18px;
+    font-size: 16px;
+    font-weight: 600;
+    display: none;
+    animation: fadeUp 0.2s ease;
+}
+.feedback-box.correct { background: #D1FAE5; color: #065F46; border: 2px solid var(--correct); }
+.feedback-box.wrong { background: #FEE2E2; color: #991B1B; border: 2px solid var(--wrong); }
+.feedback-box.show { display: block; }
+
+@keyframes fadeUp {
+    from { opacity: 0; transform: translateY(6px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+
+/* BOTTOM */
+.bottom-bar {
+    background: var(--white);
+    padding: 12px 16px;
+    flex-shrink: 0;
+    border-top: 2px solid var(--gray-100);
+}
+.btn-next {
+    width: 100%;
+    padding: 18px;
+    border-radius: 14px;
+    border: none;
+    background: var(--green);
+    color: #fff;
+    font-size: 18px;
+    font-weight: 700;
+    cursor: pointer;
+    transition: transform 0.12s, opacity 0.12s;
+    display: none;
+}
+.btn-next:active { transform: scale(0.97); }
+.btn-next.show { display: block; animation: fadeUp 0.2s ease; }
+.btn-next:disabled { background: var(--gray-300); color: var(--gray-500); pointer-events: none; }
+
+/* RESULT SCREEN */
+#screen-result {
+    display: none;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    height: 100vh;
+    padding: 28px;
+    background: linear-gradient(145deg, #1B5E3B 0%, #2D8653 55%, #52B788 100%);
+    text-align: center;
+    color: #fff;
+}
+#screen-result.show { display: flex; }
+.result-icon { font-size: 88px; margin-bottom: 16px; animation: bounce 0.6s ease; }
+.result-h1 { font-size: 34px; font-weight: 900; margin-bottom: 8px; }
+.result-score { font-size: 22px; opacity: 0.9; margin-bottom: 28px; }
+.result-grade {
+    background: rgba(255,255,255,0.2);
+    border-radius: 16px;
+    padding: 18px 28px;
+    font-size: 20px;
+    font-weight: 700;
+    margin-bottom: 32px;
+}
+.btn-retry {
+    background: #fff;
+    color: var(--green-dark);
+    font-size: 22px;
+    font-weight: 800;
+    padding: 18px 44px;
+    border-radius: 16px;
+    border: none;
+    cursor: pointer;
+    box-shadow: 0 8px 28px rgba(0,0,0,0.2);
+    transition: transform 0.15s;
+}
+.btn-retry:active { transform: scale(0.95); }
+
+@keyframes bounce {
+    0% { transform: scale(0.8); }
+    60% { transform: scale(1.1); }
+    100% { transform: scale(1); }
+}
+</style>
+</head>
+<body>
+<div id="app">
+    <header class="header normal" id="header">
+        <div class="header-title" id="header-title">마을회관 퀴즈</div>
+        <div class="header-score" id="header-score">0 / 12</div>
+    </header>
+    <div class="progress-bar">
+        <div class="progress-fill" id="progress-fill" style="width:0%"></div>
+    </div>
+    <div class="content" id="content"></div>
+    <div class="bottom-bar">
+        <button class="btn-next" id="btn-next" onclick="nextQuestion()">다음 문제 →</button>
+    </div>
+</div>
+
+<div id="screen-result">
+    <div class="result-icon" id="result-icon">🎉</div>
+    <div class="result-h1" id="result-h1">퀴즈 완료!</div>
+    <div class="result-score" id="result-score"></div>
+    <div class="result-grade" id="result-grade"></div>
+    <div style="display:flex; gap:14px; justify-content:center; flex-wrap:wrap;">
+        <button class="btn-retry" onclick="startQuiz()">🔄 다시 도전하기</button>
+    </div>
+</div>
+
+<script>
+const QUESTIONS = [
+    // OX 1
+    {
+        type: 'ox', surprise: false,
+        question: '전입신고는 이사한 날로부터\n14일 이내에 해야 한다.',
+        answer: 'O',
+        explanation: '✅ 전입신고는 이사 후 14일 이내에 해야 해요!\n기간을 넘기면 과태료가 부과될 수 있어요.'
+    },
+    // OX 2
+    {
+        type: 'ox', surprise: false,
+        question: '전입신고할 때\n신분증 없이도 가능하다.',
+        answer: 'X',
+        explanation: '❌ 전입신고 시 반드시 신분증이 필요해요!\n주민등록증 또는 여권을 꼭 지참하세요.'
+    },
+    // OX 3
+    {
+        type: 'ox', surprise: false,
+        question: '전입신고는 인터넷(정부24)으로도\n할 수 있다.',
+        answer: 'O',
+        explanation: '✅ 정부24(www.gov.kr)에서\n온라인으로도 전입신고가 가능해요!'
+    },
+    // OX 4
+    {
+        type: 'ox', surprise: false,
+        question: '전입신고서에 직업을\n반드시 기재해야 한다.',
+        answer: 'X',
+        explanation: '❌ 직업은 기재하지 않아도 돼요!\n성명, 생년월일, 주소, 전입 날짜만 기재하면 돼요.'
+    },
+    // 객관식 1
+    {
+        type: 'mc', surprise: false,
+        question: '전입신고서에 적어야 할\n항목이 아닌 것은?',
+        choices: ['성명', '직업', '새 주소', '이전 주소'],
+        answer: 1,
+        explanation: '✅ 직업은 전입신고서에 기재하지 않아요!\n성명, 생년월일, 주소, 전입 날짜를 기재하면 돼요.'
+    },
+    // 객관식 2
+    {
+        type: 'mc', surprise: false,
+        question: '전입신고 시 제출하지\n않아도 되는 서류는?',
+        choices: ['전입신고서', '신분증', '가족관계증명서', '도장'],
+        answer: 2,
+        explanation: '✅ 가족관계증명서는 필요하지 않아요!\n신분증과 전입신고서만 있으면 돼요.'
+    },
+    // 객관식 3
+    {
+        type: 'mc', surprise: false,
+        question: '전입신고를 하지 않으면\n발생할 수 있는 것은?',
+        choices: ['징역형', '과태료', '벌금형', '경고장'],
+        answer: 1,
+        explanation: '✅ 기간 내 미신고 시 과태료가 부과돼요!\n이사 후 14일 이내에 꼭 신고하세요.'
+    },
+    // 객관식 4
+    {
+        type: 'mc', surprise: false,
+        question: '전입신고 완료 후\n발급받을 수 있는 것은?',
+        choices: ['여권', '주민등록등본', '운전면허증', '건강보험카드'],
+        answer: 1,
+        explanation: '✅ 전입신고 후 주민등록등본을 발급받을 수 있어요!'
+    },
+    // 객관식 5
+    {
+        type: 'mc', surprise: false,
+        question: '전입신고서에 반드시\n기재해야 하는 것은?',
+        choices: ['성명과 새 주소', '직업과 학력', '종교와 취미', '재산과 소득'],
+        answer: 0,
+        explanation: '✅ 성명과 새 주소는 전입신고서의 필수 항목이에요!'
+    },
+    // 객관식 6
+    {
+        type: 'mc', surprise: false,
+        question: '전입신고는 어디서\n해야 하는가?',
+        choices: ['경찰서', '주민센터(동사무소)', '세무서', '법원'],
+        answer: 1,
+        explanation: '✅ 전입신고는 주민센터(동사무소)에서 해요!'
+    },
+    // 돌발상황 1
+    {
+        type: 'mc', surprise: true,
+        question: '🚨 창구에서 신분증을 깜빡했다는 걸\n알았어요. 어떻게 하시겠어요?',
+        choices: [
+            '신분증 없이 그냥 신청한다',
+            '담당자에게 양해를 구하고\n신분증을 가져온다',
+            '화를 내며 담당자에게 항의한다',
+            '그냥 집에 돌아간다'
+        ],
+        answer: 1,
+        explanation: '✅ 담당자에게 정중히 양해를 구하고\n신분증을 가져오면 돼요!\n당황하지 말고 침착하게 말씀드리세요 😊'
+    },
+    // 돌발상황 2
+    {
+        type: 'mc', surprise: true,
+        question: '🚨 번호를 불렀는데 잠깐 자리를\n비워서 못 들었어요. 어떻게 하시겠어요?',
+        choices: [
+            '그냥 창구로 가서 기다린다',
+            '번호표를 다시 뽑는다',
+            '담당자에게 상황을 설명하고\n확인을 요청한다',
+            '그냥 집에 돌아간다'
+        ],
+        answer: 2,
+        explanation: '✅ 담당자에게 상황을 설명하고\n확인을 요청하면 돼요!\n침착하게 말씀드리면 도와주실 거예요 😊'
+    },
+];
+
+let currentQ = 0;
+let score = 0;
+let answered = false;
+
+function startQuiz() {
+    currentQ = 0;
+    score = 0;
+    answered = false;
+    document.getElementById('screen-result').classList.remove('show');
+    document.getElementById('app').style.display = 'flex';
+    renderQuestion();
+}
+
+function renderQuestion() {
+    answered = false;
+    const q = QUESTIONS[currentQ];
+    const total = QUESTIONS.length;
+
+    // Header
+    const header = document.getElementById('header');
+    const headerTitle = document.getElementById('header-title');
+    header.className = 'header ' + (q.surprise ? 'surprise' : 'normal');
+    headerTitle.textContent = q.surprise ? '🚨 돌발상황!' : '마을회관 퀴즈';
+    document.getElementById('header-score').textContent = score + ' / ' + total;
+
+    // Progress
+    document.getElementById('progress-fill').style.width = (currentQ / total * 100) + '%';
+
+    // Next button
+    const btnNext = document.getElementById('btn-next');
+    btnNext.className = 'btn-next';
+    btnNext.textContent = currentQ < total - 1 ? '다음 문제 →' : '결과 보기 🏁';
+
+    // Content
+    const content = document.getElementById('content');
+
+    // Badge
+    let badgeClass = q.type === 'ox' ? 'ox' : (q.surprise ? 'surprise' : 'mc');
+    let badgeText = q.type === 'ox' ? '⭕ OX 퀴즈' : (q.surprise ? '🚨 돌발상황' : '📝 객관식');
+
+    let html = `
+        <div class="q-card ${q.surprise ? 'surprise' : ''}">
+            <div class="q-num">${currentQ + 1} / ${total}</div>
+            <span class="q-badge ${badgeClass}">${badgeText}</span>
+            <div class="q-text">${q.question.replace(/\n/g, '<br>')}</div>
+        </div>`;
+
+    if (q.type === 'ox') {
+        html += `
+        <div class="ox-row">
+            <button class="ox-btn o" id="btn-O" onclick="answerOX('O')">O</button>
+            <button class="ox-btn x" id="btn-X" onclick="answerOX('X')">X</button>
+        </div>`;
+    } else {
+        html += '<div class="mc-list">';
+        q.choices.forEach((c, i) => {
+            html += `<button class="mc-btn" id="mc-${i}" onclick="answerMC(${i})">
+                <span class="num">${i+1}</span>
+                <span>${c.replace(/\n/g, '<br>')}</span>
+            </button>`;
+        });
+        html += '</div>';
+    }
+
+    html += `<div class="feedback-box" id="feedback"></div>`;
+    content.innerHTML = html;
+    content.scrollTop = 0;
+}
+
+function answerOX(ans) {
+    if (answered) return;
+    answered = true;
+    const q = QUESTIONS[currentQ];
+    const correct = q.answer === ans;
+    if (correct) score++;
+
+    const btnO = document.getElementById('btn-O');
+    const btnX = document.getElementById('btn-X');
+    btnO.onclick = null; btnX.onclick = null;
+
+    if (ans === 'O') btnO.classList.add(correct ? 'selected-correct' : 'selected-wrong');
+    else btnX.classList.add(correct ? 'selected-correct' : 'selected-wrong');
+
+    showFeedback(correct, q.explanation);
+    document.getElementById('header-score').textContent = score + ' / ' + QUESTIONS.length;
+    document.getElementById('btn-next').classList.add('show');
+}
+
+function answerMC(idx) {
+    if (answered) return;
+    answered = true;
+    const q = QUESTIONS[currentQ];
+    const correct = q.answer === idx;
+    if (correct) score++;
+
+    for (let i = 0; i < q.choices.length; i++) {
+        const btn = document.getElementById('mc-' + i);
+        if (btn) btn.onclick = null;
+    }
+
+    const selected = document.getElementById('mc-' + idx);
+    selected.classList.add(correct ? 'selected-correct' : 'selected-wrong');
+
+    if (!correct) {
+        const correctBtn = document.getElementById('mc-' + q.answer);
+        if (correctBtn) correctBtn.classList.add('show-correct');
+    }
+
+    showFeedback(correct, q.explanation);
+    document.getElementById('header-score').textContent = score + ' / ' + QUESTIONS.length;
+    document.getElementById('btn-next').classList.add('show');
+}
+
+function showFeedback(correct, explanation) {
+    const fb = document.getElementById('feedback');
+    fb.className = 'feedback-box ' + (correct ? 'correct' : 'wrong') + ' show';
+    fb.innerHTML = (correct ? '🎉 정답!' : '❌ 오답!') + '<br>' + explanation.replace(/\n/g, '<br>');
+}
+
+function nextQuestion() {
+    currentQ++;
+    if (currentQ >= QUESTIONS.length) {
+        showResult();
+    } else {
+        renderQuestion();
+    }
+}
+
+function showResult() {
+    document.getElementById('app').style.display = 'none';
+    const total = QUESTIONS.length;
+    let icon, h1, grade;
+    if (score === total) { icon = '🏆'; h1 = '완벽해요!'; grade = '전입신고 마스터! 모든 문제를 맞혔어요!'; }
+    else if (score >= total * 0.8) { icon = '😊'; h1 = '훌륭해요!'; grade = '거의 다 맞혔어요! 조금만 더 연습해봐요.'; }
+    else if (score >= total * 0.6) { icon = '💪'; h1 = '잘했어요!'; grade = '절반 이상 맞혔어요! 더 공부해봐요.'; }
+    else { icon = '📚'; h1 = '다시 도전!'; grade = '천천히 다시 공부하고 도전해봐요!'; }
+
+    document.getElementById('result-icon').textContent = icon;
+    document.getElementById('result-h1').textContent = h1;
+    document.getElementById('result-score').textContent = '최종 점수: ' + score + ' / ' + total + '점';
+    document.getElementById('result-grade').textContent = grade;
+    document.getElementById('screen-result').classList.add('show');
+}
+
+startQuiz();
+
+function closeWidget() {
+    if (window.parent && window.parent.postMessage) {
+        window.parent.postMessage({ type: 'CLOSE_WIDGET' }, '*');
+    }
+}
+</script>
+</body>
+</html>
